@@ -1,4 +1,4 @@
-import MsgList from "../components/MsgList.js";
+import { MsgList } from "../components";
 
 const Home = () => {
   return (

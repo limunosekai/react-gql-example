@@ -1,4 +1,15 @@
-const MsgItem = ({ userId, text, timestamp }) => {
+import MsgInput from "../MsgInput";
+
+const MsgItem = ({
+  id,
+  userId,
+  text,
+  timestamp,
+  onUpdate,
+  isEditing = false,
+  onStartEdit,
+  onDelete,
+}) => {
   return (
     <li className="messages__item">
       <h3>
@@ -14,7 +25,17 @@ const MsgItem = ({ userId, text, timestamp }) => {
           })}
         </sub>
       </h3>
-      {text}
+      {isEditing ? (
+        <>
+          <MsgInput mutate={onUpdate} id={id} text={text} />
+        </>
+      ) : (
+        text
+      )}
+      <div className="messages__buttons">
+        <button onClick={onStartEdit}>Edit</button>
+        <button onClick={onDelete}>Delete</button>
+      </div>
     </li>
   );
 };
