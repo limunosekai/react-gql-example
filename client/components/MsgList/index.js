@@ -67,7 +67,7 @@ const MsgList = () => {
 
   return (
     <>
-      <MsgInput mutate={handleCreate} />
+      {userId && <MsgInput mutate={handleCreate} />}
       <ul className="messages">
         {mockMsgs?.map((item) => (
           <MsgItem
