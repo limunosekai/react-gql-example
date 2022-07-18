@@ -1,22 +1,38 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+import useIntersection from "../../hooks/useInfiniteScroll";
 import { MsgInput, MsgItem } from "..";
 import fetcher from "../../fetcher";
 
 const MsgList = () => {
+  const ref = useRef(null);
   const {
     query: { userId = "" },
   } = useRouter();
+  const intersecting = useIntersection(ref);
   const [mockMsgs, setMockMsgs] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [hasNext, setHasNext] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const getMessages = async () => {
+    setIsLoading(true);
+    const newMsgs = await fetcher("get", "/messages", {
+      params: { cursor: mockMsgs[mockMsgs.length - 1]?.id || "" },
+    });
+    if (newMsgs.length === 0) {
+      setHasNext(false);
+      return;
+    }
+    setMockMsgs((prev) => [...prev, ...newMsgs]);
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    const getMessages = async () => {
-      const msgs = await fetcher("get", "/messages");
-      setMockMsgs(msgs);
-    };
-    getMessages();
-  }, []);
+    if (intersecting && intersecting.isIntersecting && hasNext && !isLoading) {
+      getMessages();
+    }
+  }, [intersecting?.isIntersecting, hasNext, isLoading]);
 
   const handleCreate = async (text) => {
     const newMsg = await fetcher("post", "/messages", { text, userId });
@@ -61,12 +77,8 @@ const MsgList = () => {
     });
   };
 
-  if (mockMsgs.length === 0) {
-    return null;
-  }
-
   return (
-    <>
+    <main>
       {userId && <MsgInput mutate={handleCreate} />}
       <ul className="messages">
         {mockMsgs?.map((item) => (
@@ -81,7 +93,8 @@ const MsgList = () => {
           />
         ))}
       </ul>
-    </>
+      <div ref={ref} style={{ border: "1px solid white" }} />
+    </main>
   );
 };
 
