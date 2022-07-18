@@ -4,13 +4,13 @@ import useIntersection from "../../hooks/useInfiniteScroll";
 import { MsgInput, MsgItem } from "..";
 import fetcher from "../../fetcher";
 
-const MsgList = () => {
+const MsgList = ({ smsgs, users }) => {
   const ref = useRef(null);
   const {
     query: { userId = "" },
   } = useRouter();
   const intersecting = useIntersection(ref);
-  const [mockMsgs, setMockMsgs] = useState([]);
+  const [mockMsgs, setMockMsgs] = useState(smsgs);
   const [editingId, setEditingId] = useState(null);
   const [hasNext, setHasNext] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -90,6 +90,7 @@ const MsgList = () => {
             onStartEdit={() => setEditingId(item.id)}
             onDelete={() => handleDelete(item.id)}
             myId={userId}
+            user={users[item.userId]}
           />
         ))}
       </ul>
