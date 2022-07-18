@@ -1,54 +1,57 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { MsgInput, MsgItem } from "..";
+import fetcher from "../../fetcher";
 
 const MsgList = () => {
-  const userIds = ["roy", "joy"];
-  const getRandomUserId = () => userIds[Math.round(Math.random())];
+  const {
+    query: { userId = "" },
+  } = useRouter();
   const [mockMsgs, setMockMsgs] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
-    const temp = Array(50)
-      .fill(0)
-      .map((_, i) => ({
-        id: i + 1,
-        userId: getRandomUserId(),
-        timestamp: 1234567890123 + i * 1000 * 60,
-        text: `${i + 1} mock text`,
-      }))
-      .reverse();
-    setMockMsgs(temp);
+    const getMessages = async () => {
+      const msgs = await fetcher("get", "/messages");
+      setMockMsgs(msgs);
+    };
+    getMessages();
   }, []);
 
-  const handleCreate = (text) => {
-    const newMsg = {
-      id: mockMsgs.length + 2,
-      userId: getRandomUserId(),
-      timestamp: Date.now(),
-      text: `${mockMsgs.length} ${text}`,
-    };
+  const handleCreate = async (text) => {
+    const newMsg = await fetcher("post", "/messages", { text, userId });
+    if (!newMsg) {
+      return;
+    }
     setMockMsgs((prev) => [newMsg, ...prev]);
   };
 
-  const handleUpdate = (text, id) => {
+  const handleUpdate = async (text, id) => {
+    const newMsg = await fetcher("put", `/messages/${id}`, { text, userId });
+    if (!newMsg) {
+      return;
+    }
     setMockMsgs((prev) => {
       const targetIndex = mockMsgs.findIndex((msg) => msg.id === id);
       if (targetIndex < 0) {
         return prev;
       }
       const newMsgs = [...prev];
-      newMsgs.splice(targetIndex, 1, {
-        ...prev[targetIndex],
-        text,
-      });
+      newMsgs.splice(targetIndex, 1, newMsg);
       return newMsgs;
     });
     setEditingId(null);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    const deletedId = await fetcher("delete", `/messages/${id}`, {
+      params: { userId },
+    });
+    if (!deletedId) {
+      return;
+    }
     setMockMsgs((prev) => {
-      const targetIndex = mockMsgs.findIndex((msg) => msg.id === id);
+      const targetIndex = mockMsgs.findIndex((msg) => +msg.id === +deletedId);
       if (targetIndex < 0) {
         return prev;
       }
@@ -74,6 +77,7 @@ const MsgList = () => {
             isEditing={editingId === item.id}
             onStartEdit={() => setEditingId(item.id)}
             onDelete={() => handleDelete(item.id)}
+            myId={userId}
           />
         ))}
       </ul>

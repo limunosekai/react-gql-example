@@ -9,6 +9,7 @@ const MsgItem = ({
   isEditing = false,
   onStartEdit,
   onDelete,
+  myId,
 }) => {
   return (
     <li className="messages__item">
@@ -32,10 +33,12 @@ const MsgItem = ({
       ) : (
         text
       )}
-      <div className="messages__buttons">
-        <button onClick={onStartEdit}>Edit</button>
-        <button onClick={onDelete}>Delete</button>
-      </div>
+      {myId === userId && (
+        <div className="messages__buttons">
+          <button onClick={onStartEdit}>Edit</button>
+          <button onClick={onDelete}>Delete</button>
+        </div>
+      )}
     </li>
   );
 };

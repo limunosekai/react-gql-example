@@ -76,14 +76,14 @@ const messagesRoute = [
     // DELETE Messages
     method: "delete",
     route: "/messages/:id",
-    handler: ({ body, params: { id } }, res) => {
+    handler: ({ params: { id }, query: { userId } }, res) => {
       try {
         const msgs = getMsgs();
         const targetIndex = msgs.findIndex((msg) => msg.id === id);
         if (targetIndex < 0) {
           throw new Error("메시지가 없습니다.");
         }
-        if (msgs[targetIndex].userId !== body.userId) {
+        if (msgs[targetIndex].userId !== userId) {
           throw new Error("사용자가 다릅니다.");
         }
 
