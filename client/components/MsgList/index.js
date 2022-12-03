@@ -1,85 +1,55 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import useIntersection from "../../hooks/useInfiniteScroll";
+// import useIntersection from "../../hooks/useInfiniteScroll";
 import { MsgInput, MsgItem } from "..";
-import fetcher from "../../fetcher";
+import fetcher, {
+  useCreateMutation,
+  useDeleteMutation,
+  useMessagesQuery,
+  useUpdateMutation,
+} from "../../queryClient";
 
 const MsgList = ({ smsgs, users }) => {
   const ref = useRef(null);
   const {
     query: { userId = "" },
   } = useRouter();
-  const intersecting = useIntersection(ref);
+  const { data, isLoading } = useMessagesQuery();
+  const { mutate: onUpdate } = useUpdateMutation();
+  const { mutate: onCreate } = useCreateMutation();
+  const { mutate: onDelete } = useDeleteMutation();
+
+  // const intersecting = useIntersection(ref);
   const [mockMsgs, setMockMsgs] = useState(smsgs);
   const [editingId, setEditingId] = useState(null);
-  const [hasNext, setHasNext] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const getMessages = async () => {
-    setIsLoading(true);
-    const newMsgs = await fetcher("get", "/messages", {
-      params: { cursor: mockMsgs[mockMsgs.length - 1]?.id || "" },
-    });
-    if (newMsgs.length === 0) {
-      setHasNext(false);
-      return;
-    }
-    setMockMsgs((prev) => [...prev, ...newMsgs]);
-    setIsLoading(false);
-  };
+  // const [hasNext, setHasNext] = useState(true);
+  // const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (intersecting && intersecting.isIntersecting && hasNext && !isLoading) {
-      getMessages();
+    if (data?.messages && data?.messages.length > 0) {
+      console.log("messages changed!!");
+      setMockMsgs(data?.messages);
     }
-  }, [intersecting?.isIntersecting, hasNext, isLoading]);
+  }, [data?.messages]);
 
-  const handleCreate = async (text) => {
-    const newMsg = await fetcher("post", "/messages", { text, userId });
-    if (!newMsg) {
-      return;
-    }
-    setMockMsgs((prev) => [newMsg, ...prev]);
-  };
+  // useEffect(() => {
+  //   if (intersecting && intersecting.isIntersecting && hasNext && !isLoading) {
+  //     getMessages();
+  //   }
+  // }, [intersecting?.isIntersecting, hasNext, isLoading]);
 
-  const handleUpdate = async (text, id) => {
-    const newMsg = await fetcher("put", `/messages/${id}`, { text, userId });
-    if (!newMsg) {
-      return;
-    }
-    setMockMsgs((prev) => {
-      const targetIndex = mockMsgs.findIndex((msg) => msg.id === id);
-      if (targetIndex < 0) {
-        return prev;
-      }
-      const newMsgs = [...prev];
-      newMsgs.splice(targetIndex, 1, newMsg);
-      return newMsgs;
-    });
+  const handleUpdate = ({ text, id }) => {
+    onUpdate({ text, id, userId });
     setEditingId(null);
   };
 
-  const handleDelete = async (id) => {
-    const deletedId = await fetcher("delete", `/messages/${id}`, {
-      params: { userId },
-    });
-    if (!deletedId) {
-      return;
-    }
-    setMockMsgs((prev) => {
-      const targetIndex = mockMsgs.findIndex((msg) => +msg.id === +deletedId);
-      if (targetIndex < 0) {
-        return prev;
-      }
-      const newMsgs = [...prev];
-      newMsgs.splice(targetIndex, 1);
-      return newMsgs;
-    });
-  };
+  if (isLoading) {
+    return <h1>Loading...</h1>;
+  }
 
   return (
     <main>
-      {userId && <MsgInput mutate={handleCreate} />}
+      {userId && <MsgInput userId={userId} mutate={onCreate} />}
       <ul className="messages">
         {mockMsgs?.map((item) => (
           <MsgItem
@@ -88,9 +58,9 @@ const MsgList = ({ smsgs, users }) => {
             onUpdate={handleUpdate}
             isEditing={editingId === item.id}
             onStartEdit={() => setEditingId(item.id)}
-            onDelete={() => handleDelete(item.id)}
+            onDelete={onDelete}
             myId={userId}
-            user={users[item.userId]}
+            user={users.find((user) => user.id === userId)}
           />
         ))}
       </ul>
