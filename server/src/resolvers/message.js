@@ -54,6 +54,9 @@ const messageResolver = {
       return id;
     },
   },
+  Message: {
+    user: (msg, args, { models }) => models.users[msg.userId],
+  },
 };
 
 export default messageResolver;

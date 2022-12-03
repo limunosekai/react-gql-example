@@ -9,7 +9,7 @@ import {
   useUpdateMutation,
 } from "../../queryClient";
 
-const MsgList = ({ smsgs, users }) => {
+const MsgList = ({ smsgs }) => {
   const ref = useRef(null);
   const {
     query: { userId = "" },
@@ -52,7 +52,7 @@ const MsgList = ({ smsgs, users }) => {
 
   return (
     <main>
-      {userId && <MsgInput userId={userId} mutate={onCreate} />}
+      {userId && <MsgInput id={userId} mutate={onCreate} />}
       <ul className="messages">
         {mockMsgs?.map((item) => (
           <MsgItem
@@ -63,7 +63,6 @@ const MsgList = ({ smsgs, users }) => {
             onStartEdit={() => setEditingId(item.id)}
             onDelete={onDelete}
             myId={userId}
-            user={users.find((user) => user.id === userId)}
           />
         ))}
       </ul>

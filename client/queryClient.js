@@ -33,12 +33,34 @@ export const useCreateMutation = () => {
       onSuccess: ({ createMessages }) => {
         queryClient.setQueryData(["MESSAGES"], (prev) => {
           return {
-            messages: [createMessages, ...prev.messages],
+            pageParam: prev.pageParam,
+            pages: [
+              {
+                messages: [createMessages, ...prev.pages[0].messages],
+              },
+              ...prev.pages.slice(1),
+            ],
           };
         });
       },
     }
   );
+};
+
+const findTargetMsgIdx = (data, id) => {
+  let msgIndex = -1;
+  const pageIndex = data.pages.findIndex(({ messages }) => {
+    msgIndex = messages.findIndex((msg) => msg.id === id);
+    if (msgIndex > -1) {
+      return true;
+    }
+    return false;
+  });
+
+  return {
+    pageIndex,
+    msgIndex,
+  };
 };
 
 export const useUpdateMutation = () => {
@@ -49,16 +71,19 @@ export const useUpdateMutation = () => {
     {
       onSuccess: ({ updateMessages }) => {
         queryClient.setQueryData(["MESSAGES"], (prev) => {
-          const targetIndex = prev.messages.findIndex(
-            (msg) => msg.id === updateMessages.id
+          const { pageIndex, msgIndex } = findTargetMsgIdx(
+            prev,
+            updateMessages.id
           );
-          if (targetIndex < 0) {
+          if (pageIndex < 0 || msgIndex < 0) {
             return prev;
           }
-          const newMsgs = [...prev.messages];
-          newMsgs.splice(targetIndex, 1, updateMessages);
+          const newPages = [...prev.pages];
+          newPages[pageIndex] = { messages: [...newPages[pageIndex].messages] };
+          newPages[pageIndex].messages.splice(msgIndex, 1, updateMessages);
           return {
-            messages: newMsgs,
+            pageParam: prev.pageParam,
+            pages: newPages,
           };
         });
       },
@@ -74,16 +99,16 @@ export const useDeleteMutation = () => {
     {
       onSuccess: ({ deleteMessages: deletedId }) => {
         queryClient.setQueryData(["MESSAGES"], (prev) => {
-          const targetIndex = prev.messages.findIndex(
-            (msg) => msg.id === deletedId
-          );
-          if (targetIndex < 0) {
+          const { pageIndex, msgIndex } = findTargetMsgIdx(prev, deletedId);
+          if (pageIndex < 0 || msgIndex < 0) {
             return prev;
           }
-          const newMsgs = [...prev.messages];
-          newMsgs.splice(targetIndex, 1);
+          const newPages = [...prev.pages];
+          newPages[pageIndex] = { messages: [...newPages[pageIndex].messages] };
+          newPages[pageIndex].messages.splice(msgIndex, 1);
           return {
-            messages: newMsgs,
+            pageParam: prev.pageParam,
+            pages: newPages,
           };
         });
       },

@@ -2,7 +2,8 @@ import MsgInput from "../MsgInput";
 
 const MsgItem = ({
   id,
-  userId,
+  // userId,
+  user,
   text,
   timestamp,
   onUpdate,
@@ -10,8 +11,8 @@ const MsgItem = ({
   onStartEdit,
   onDelete,
   myId,
-  user,
 }) => {
+  const { id: userId, nickname } = user;
   const handleDelete = () => {
     onDelete({ id, userId });
   };
@@ -19,7 +20,7 @@ const MsgItem = ({
   return (
     <li className="messages__item">
       <h3>
-        {user?.nickname || ""}
+        {nickname || ""}
         <sub>
           {new Date(timestamp).toLocaleString("ko-KR", {
             year: "numeric",
