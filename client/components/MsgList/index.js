@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-// import useIntersection from "../../hooks/useInfiniteScroll";
+import useIntersection from "../../hooks/useInfiniteScroll";
 import { MsgInput, MsgItem } from "..";
-import fetcher, {
+import {
   useCreateMutation,
   useDeleteMutation,
   useMessagesQuery,
@@ -14,29 +14,32 @@ const MsgList = ({ smsgs, users }) => {
   const {
     query: { userId = "" },
   } = useRouter();
-  const { data, isLoading } = useMessagesQuery();
+  const { data, isLoading, fetchNextPage, hasNextPage } = useMessagesQuery();
   const { mutate: onUpdate } = useUpdateMutation();
   const { mutate: onCreate } = useCreateMutation();
   const { mutate: onDelete } = useDeleteMutation();
 
-  // const intersecting = useIntersection(ref);
+  const intersecting = useIntersection(ref);
   const [mockMsgs, setMockMsgs] = useState(smsgs);
   const [editingId, setEditingId] = useState(null);
-  // const [hasNext, setHasNext] = useState(true);
-  // const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (data?.messages && data?.messages.length > 0) {
-      console.log("messages changed!!");
-      setMockMsgs(data?.messages);
+    if (data?.pages) {
+      const mergedMessages = data.pages.flatMap((d) => d.messages);
+      setMockMsgs(mergedMessages);
     }
-  }, [data?.messages]);
+  }, [data?.pages]);
 
-  // useEffect(() => {
-  //   if (intersecting && intersecting.isIntersecting && hasNext && !isLoading) {
-  //     getMessages();
-  //   }
-  // }, [intersecting?.isIntersecting, hasNext, isLoading]);
+  useEffect(() => {
+    if (
+      intersecting &&
+      intersecting.isIntersecting &&
+      hasNextPage &&
+      !isLoading
+    ) {
+      fetchNextPage();
+    }
+  }, [intersecting?.isIntersecting, hasNextPage, isLoading]);
 
   const handleUpdate = ({ text, id }) => {
     onUpdate({ text, id, userId });

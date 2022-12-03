@@ -1,5 +1,5 @@
 import { request } from "graphql-request";
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "react-query";
 import {
   CREATE_MESSAGE,
   DELETE_MESSAGE,
@@ -13,7 +13,15 @@ export const fetcher = (query, variables = {}) =>
   request(BASE_URL, query, variables);
 
 export const useMessagesQuery = () => {
-  return useQuery(["MESSAGES"], () => fetcher(GET_MESSAGES));
+  return useInfiniteQuery(
+    ["MESSAGES"],
+    ({ pageParam = "" }) => fetcher(GET_MESSAGES, { cursor: pageParam }),
+    {
+      getNextPageParam: ({ messages }) => {
+        return messages?.[messages.length - 1]?.id ?? undefined;
+      },
+    }
+  );
 };
 
 export const useCreateMutation = () => {

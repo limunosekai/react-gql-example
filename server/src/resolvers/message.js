@@ -5,9 +5,10 @@ const setMsgs = (data) => writeDB("messages", data);
 
 const messageResolver = {
   Query: {
-    messages: (parent, args, { models }) => {
-      console.log(parent, args);
-      return models.messages;
+    messages: (parent, { cursor = "" }, { models }) => {
+      const fromIndex =
+        models.messages?.findIndex((msg) => msg.id === cursor) + 1;
+      return models.messages?.slice(fromIndex, fromIndex + 15) || [];
     },
     message: (parent, { id = "" }, { models }) => {
       return models.messages.find((msg) => msg.id === id);
